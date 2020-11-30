@@ -19,7 +19,7 @@ namespace EAOriginUpdater
             {
                case "NOW":
                   Console.WriteLine("INFO : Downloading...");
-                  _ = new Downloader(GetDownloadUri().ToString(), SavedPath);
+                  _ = new Downloader(downlaodUri.ToString(), SavedPath);
                   bool isComplete = File.Exists(SavedPath);
                   Console.WriteLine($"INFO : Download {(isComplete ? "completed" : "failed")}...");
                   break;
@@ -62,35 +62,44 @@ namespace EAOriginUpdater
          string systemDisk = Environment.SystemDirectory.Substring(0, 1);
          string originSelfUpdateDirectory = $@"{systemDisk}:\ProgramData\Origin\SelfUpdate";
          string originSelfUpdateDirectoryWithAllUsers = $@"{systemDisk}:\Documents and Settings\All Users\Origin\SelfUpdate";
-         string[] filesCurr = Directory.GetFiles(originSelfUpdateDirectory);
-         string[] filesAll = Directory.GetFiles(originSelfUpdateDirectoryWithAllUsers);
-         string downlaodUri = downlaodUriSubString;
-         bool isFoundedFile = false;
-         foreach (string file in filesCurr)
+         if (!Directory.Exists(originSelfUpdateDirectory) && !Directory.Exists(originSelfUpdateDirectoryWithAllUsers))
          {
-            if (new FileInfo(file).Extension == ".part")
-            {
-               downlaodUri += Path.GetFileNameWithoutExtension(file);
-               isFoundedFile = true;
-               SavedPath = $@"{originSelfUpdateDirectory}\{Path.GetFileNameWithoutExtension(file)}";
-               break;
-            }
+            string errTips = @"You may not have the EA origin platform installed, or you may not be able to find the configuration directory for this platform.";
+            Console.WriteLine($"ERROR : {errTips}\n");
+            return null;
          }
-         if (!isFoundedFile)
+         else
          {
-            foreach (string file in filesAll)
+            string[] filesCurr = Directory.GetFiles(originSelfUpdateDirectory);
+            string[] filesAll = Directory.GetFiles(originSelfUpdateDirectoryWithAllUsers);
+            string downlaodUri = downlaodUriSubString;
+            bool isFoundedFile = false;
+            foreach (string file in filesCurr)
             {
                if (new FileInfo(file).Extension == ".part")
                {
                   downlaodUri += Path.GetFileNameWithoutExtension(file);
                   isFoundedFile = true;
-                  SavedPath = $@"{originSelfUpdateDirectoryWithAllUsers}\{Path.GetFileNameWithoutExtension(file)}";
+                  SavedPath = $@"{originSelfUpdateDirectory}\{Path.GetFileNameWithoutExtension(file)}";
                   break;
                }
             }
+            if (!isFoundedFile)
+            {
+               foreach (string file in filesAll)
+               {
+                  if (new FileInfo(file).Extension == ".part")
+                  {
+                     downlaodUri += Path.GetFileNameWithoutExtension(file);
+                     isFoundedFile = true;
+                     SavedPath = $@"{originSelfUpdateDirectoryWithAllUsers}\{Path.GetFileNameWithoutExtension(file)}";
+                     break;
+                  }
+               }
+            }
+            if (isFoundedFile) return new Uri(downlaodUri);
+            else return null;
          }
-         if (isFoundedFile) return new Uri(downlaodUri);
-         else return null;
       }
    }
 }
